@@ -1,0 +1,145 @@
+:host {
+  all: initial;
+}
+
+.dtw-root {
+  position: fixed;
+  z-index: 2147483646;
+  top: 12px;
+  left: 12px;
+  width: 148px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 11px;
+  line-height: 1.25;
+  color: #0f0f0f;
+  background: rgba(247, 243, 236, 0.42);
+  border: 1px solid rgba(42, 42, 42, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px) saturate(1.1);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  user-select: none;
+}
+
+.dtw-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: rgba(31, 31, 34, 0.48);
+  color: #f7f3ec;
+  cursor: grab;
+}
+
+.dtw-header:active {
+  cursor: grabbing;
+}
+
+.dtw-logo {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.dtw-brand {
+  flex: 1;
+  min-width: 0;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.dtw-status {
+  font-size: 10px;
+  white-space: nowrap;
+  color: #f0d58a;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.dtw-status[hidden] {
+  display: none;
+}
+
+.dtw-status[data-kind="error"] {
+  color: #f0a0a0;
+}
+
+.dtw-body {
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dtw-select {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid rgba(42, 42, 42, 0.35);
+  background: rgba(255, 255, 255, 0.48);
+  color: #0f0f0f;
+  padding: 3px 4px;
+  font: inherit;
+  font-size: 10px;
+  border-radius: 0;
+  text-shadow: 0 0 4px rgba(247, 243, 236, 0.85);
+}
+
+.dtw-error {
+  color: #6e1010;
+  font-size: 10px;
+  margin: 0;
+  font-weight: 600;
+  text-shadow: 0 0 5px rgba(247, 243, 236, 0.95);
+}
+
+.dtw-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.dtw-drag,
+.dtw-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  padding: 5px 4px;
+  border: 1px solid rgba(42, 42, 42, 0.35);
+  background: rgba(255, 255, 255, 0.45);
+  color: #0f0f0f;
+  font-weight: 700;
+  font-size: 11px;
+  text-shadow: 0 0 4px rgba(247, 243, 236, 0.85);
+  font-family: inherit;
+}
+
+.dtw-drag {
+  cursor: grab;
+}
+
+.dtw-copy {
+  cursor: pointer;
+}
+
+.dtw-drag[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.dtw-drag[aria-disabled="true"],
+.dtw-copy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dtw-drag-icon {
+  width: 13px;
+  height: 13px;
+  display: block;
+  flex-shrink: 0;
+}
