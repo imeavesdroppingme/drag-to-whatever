@@ -83,3 +83,5 @@ Example JSON processors in the repo ([`processors/declarative/`](processors/decl
 ## Support
 
 If you like this extension, leave a short message at [imeavesdropping.com](https://imeavesdropping.com).
+
+Privacy policy: [PRIVACY.md](PRIVACY.md).
