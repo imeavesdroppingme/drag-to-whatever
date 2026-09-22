@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DragToWhatever",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Transform the current page with a processor and drag the artifact anywhere.",
   "author": "imeavesdropping",
   "permissions": ["storage", "scripting", "tabs", "clipboardWrite"],
