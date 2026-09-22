@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "id": "jira-markdown",
+  "name": "Jira → Markdown",
+  "matches": [
+    "https://jira.atlassian.com/browse/*",
+    "https://*.atlassian.net/browse/*",
+    "http://jira.atlassian.com/browse/*",
+    "http://*.atlassian.net/browse/*"
+  ],
+  "priority": 100,
+  "mimeType": "text/markdown",
+  "wait": {
+    "selector": "#summary-val, #key-val, .activity-comment",
+    "timeoutMs": 12000
+  },
+  "before": [
+    {
+      "clickText": "^Comments$",
+      "max": 1,
+      "delayMs": 400
+    }
+  ],
+
+  "vars": {
+    "key": [
+      {
+        "fallback": [
+          [{ "select": "#key-val" }, { "text": true }],
+          [
+            { "const": "$url" },
+            { "match": "/browse/([A-Z][A-Z0-9]+-\\d+)", "group": 1 }
+          ]
+        ]
+      }
+    ],
+    "title": [
+      {
+        "fallback": [
+          [{ "select": "#summary-val" }, { "text": true }],
+          [{ "select": "#summary-val h2" }, { "text": true }],
+          [{ "const": "$title" }]
+        ]
+      }
+    ],
+    "status": [
+      {
+        "fallback": [
+          [{ "select": "#opsbar-transitions_more" }, { "text": true }],
+          [{ "select": "#status-val" }, { "text": true }]
+        ]
+      }
+    ],
+    "type": [{ "select": "#type-val" }, { "text": true }],
+    "priority": [{ "select": "#priority-val" }, { "text": true }],
+    "assignee": [{ "select": "#assignee-val" }, { "text": true }],
+    "reporter": [{ "select": "#reporter-val" }, { "text": true }],
+    "created": [{ "select": "#created-val" }, { "text": true }],
+    "updated": [{ "select": "#updated-val" }, { "text": true }],
+    "description": [
+      {
+        "fallback": [
+          [{ "select": "#description-val" }, { "htmlToMarkdown": true }],
+          [
+            { "select": "#descriptionmodule .user-content-block" },
+            { "htmlToMarkdown": true }
+          ]
+        ]
+      }
+    ],
+    "comments": {
+      "from": [
+        {
+          "fallback": [
+            [{ "select": "#issue_actions_container" }],
+            [{ "select": "#activitymodule" }],
+            [{ "select": "body" }]
+          ]
+        }
+      ],
+      "mapAll": {
+        "items": ".activity-comment",
+        "fields": {
+          "author": [
+            {
+              "fallback": [
+                [{ "select": "a.user-hover" }, { "text": true }],
+                [{ "select": ".author" }, { "text": true }],
+                [{ "const": "unknown" }]
+              ]
+            }
+          ],
+          "body": [
+            {
+              "fallback": [
+                [{ "select": ".action-body" }, { "htmlToMarkdown": true }],
+                [{ "select": ".flooded" }, { "htmlToMarkdown": true }],
+                [{ "text": true }]
+              ]
+            }
+          ]
+        },
+        "template": "- **{{author}}**\n{{indent body}}"
+      }
+    }
+  },
+  "output": {
+    "join": [
+      "\n\n",
+      [
+        { "template": "# {{key}}: {{title}}" },
+        {
+          "join": [
+            "  \n",
+            [
+              { "template": "Status: {{status}}", "if": "status" },
+              { "template": "Type: {{type}}", "if": "type" },
+              { "template": "Priority: {{priority}}", "if": "priority" },
+              { "template": "Assignee: {{assignee}}", "if": "assignee" },
+              { "template": "Reporter: {{reporter}}", "if": "reporter" },
+              { "template": "Created: {{created}}", "if": "created" },
+              { "template": "Updated: {{updated}}", "if": "updated" },
+              { "template": "URL: {{$url}}" }
+            ]
+          ]
+        },
+        {
+          "if": "description",
+          "join": [
+            "\n\n",
+            [{ "template": "## Description" }, { "var": "description" }]
+          ]
+        },
+        {
+          "if": "comments",
+          "join": [
+            "\n\n",
+            [{ "template": "## Comments" }, { "var": "comments" }]
+          ]
+        }
+      ]
+    ]
+  }
+}

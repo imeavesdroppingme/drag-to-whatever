@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "id": "youtube-markdown",
+  "name": "YouTube → Markdown",
+  "matches": [
+    "https://www.youtube.com/watch*",
+    "https://youtube.com/watch*",
+    "https://youtu.be/*",
+    "http://www.youtube.com/watch*",
+    "http://youtube.com/watch*",
+    "http://youtu.be/*"
+  ],
+  "priority": 100,
+  "mimeType": "text/markdown",
+  "wait": {
+    "selector": "ytd-watch-metadata, h1.ytd-watch-metadata, meta[property=\"og:title\"]",
+    "timeoutMs": 12000
+  },
+  "before": [
+    {
+      "scrollIntoView": "#comments, ytd-comments",
+      "delayMs": 700,
+      "thenWait": "ytd-comment-thread-renderer",
+      "timeoutMs": 12000
+    },
+    {
+      "clickText": "^(View |Show )?\\d+\\s+replies?$|^Show more replies$|^View reply$",
+      "max": 40,
+      "delayMs": 350
+    }
+  ],
+  "vars": {
+    "title": [
+      {
+        "fallback": [
+          [
+            { "select": "h1.ytd-watch-metadata yt-formatted-string" },
+            { "text": true }
+          ],
+          [{ "select": "ytd-watch-metadata h1" }, { "text": true }],
+          [
+            { "select": "meta[property=\"og:title\"]" },
+            { "attr": "content" }
+          ],
+          [{ "select": "meta[name=\"title\"]" }, { "attr": "content" }],
+          [{ "const": "$title" }]
+        ]
+      }
+    ],
+    "channel": [
+      {
+        "fallback": [
+          [{ "select": "ytd-channel-name a" }, { "text": true }],
+          [{ "select": "#channel-name a" }, { "text": true }],
+          [{ "select": "#owner-name a" }, { "text": true }]
+        ]
+      }
+    ],
+    "channelUrl": [
+      {
+        "fallback": [
+          [{ "select": "ytd-channel-name a" }, { "attr": "href" }],
+          [{ "select": "#channel-name a" }, { "attr": "href" }]
+        ]
+      }
+    ],
+    "info": [
+      {
+        "fallback": [
+          [{ "select": "ytd-watch-info-text" }, { "text": true }],
+          [{ "select": "#info-container" }, { "text": true }]
+        ]
+      }
+    ],
+    "videoId": [
+      {
+        "fallback": [
+          [
+            { "const": "$url" },
+            { "match": "[?&]v=([^&]+)", "group": 1 }
+          ],
+          [
+            { "const": "$url" },
+            { "match": "youtu\\.be/([^?&/]+)", "group": 1 }
+          ]
+        ]
+      }
+    ],
+    "description": [
+      {
+        "fallback": [
+          [
+            { "select": "#description-inline-expander" },
+            { "htmlToMarkdown": true }
+          ],
+          [
+            { "select": "ytd-text-inline-expander" },
+            { "htmlToMarkdown": true }
+          ],
+          [
+            { "select": "#description" },
+            { "htmlToMarkdown": true }
+          ],
+          [
+            { "select": "meta[property=\"og:description\"]" },
+            { "attr": "content" }
+          ]
+        ]
+      }
+    ],
+    "comments": {
+      "from": [
+        {
+          "fallback": [
+            [{ "select": "ytd-comments" }],
+            [{ "select": "#comments" }],
+            [{ "select": "body" }]
+          ]
+        }
+      ],
+      "mapAll": {
+        "items": "ytd-comment-thread-renderer ytd-comment-view-model, ytd-comment-thread-renderer ytd-comment-renderer",
+        "fields": {
+          "author": [
+            {
+              "fallback": [
+                [{ "select": "#author-text" }, { "text": true }],
+                [{ "select": "a#author-text" }, { "text": true }],
+                [{ "select": "#author-text span" }, { "text": true }],
+                [{ "const": "unknown" }]
+              ]
+            }
+          ],
+          "depth": [{ "isInside": "ytd-comment-replies-renderer" }],
+          "body": [
+            {
+              "fallback": [
+                [
+                  { "select": "#content-text" },
+                  { "htmlToMarkdown": true }
+                ],
+                [
+                  { "select": "yt-attributed-string#content-text" },
+                  { "text": true }
+                ],
+                [{ "select": "#content-text" }, { "text": true }]
+              ]
+            }
+          ]
+        },
+        "template": "- **{{author}}**\n{{indentBy depth body}}"
+      }
+    }
+  },
+  "output": {
+    "join": [
+      "\n\n",
+      [
+        { "template": "# {{title}}" },
+        {
+          "join": [
+            "  \n",
+            [
+              { "template": "Channel: {{channel}}", "if": "channel" },
+              { "template": "Channel URL: {{channelUrl}}", "if": "channelUrl" },
+              { "template": "Info: {{info}}", "if": "info" },
+              { "template": "Video ID: {{videoId}}", "if": "videoId" },
+              { "template": "URL: {{$url}}" }
+            ]
+          ]
+        },
+        {
+          "if": "description",
+          "join": [
+            "\n\n",
+            [{ "template": "## Description" }, { "var": "description" }]
+          ]
+        },
+        {
+          "if": "comments",
+          "join": [
+            "\n\n",
+            [{ "template": "## Comments" }, { "var": "comments" }]
+          ]
+        }
+      ]
+    ]
+  }
+}

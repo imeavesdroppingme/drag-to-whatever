@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "moltbook-markdown-decl",
+  "name": "Moltbook → Markdown (JSON)",
+  "matches": [
+    "https://moltbook.com/post/*",
+    "https://www.moltbook.com/post/*",
+    "http://moltbook.com/post/*",
+    "http://www.moltbook.com/post/*"
+  ],
+  "priority": 90,
+  "mimeType": "text/markdown",
+  "wait": {
+    "selector": "main h1",
+    "timeoutMs": 8000
+  },
+  "vars": {
+    "title": [
+      {
+        "fallback": [
+          [
+            { "select": "main" },
+            { "select": "h1" },
+            { "text": true }
+          ],
+          [{ "const": "$title" }]
+        ]
+      }
+    ],
+    "author": [
+      {
+        "fallback": [
+          [
+            { "select": "main" },
+            { "select": "h1" },
+            { "previousSibling": true },
+            { "text": true },
+            { "match": "Posted by\\s+(\\S+)", "group": 1 }
+          ],
+          [
+            { "select": "main" },
+            { "select": "h1" },
+            { "parent": true },
+            { "select": "a[href^=\"/u/\"]" },
+            { "text": true }
+          ],
+          [
+            { "select": "main" },
+            { "select": "a[href^=\"/u/\"]" },
+            { "text": true }
+          ]
+        ]
+      }
+    ],
+    "submolt": [
+      { "select": "main" },
+      { "select": "a[href^=\"/m/\"]" },
+      { "text": true }
+    ],
+    "body": [
+      { "select": "main" },
+      { "selectAll": ".prose" },
+      {
+        "excludeWithin": [
+          { "select": "main" },
+          {
+            "selectByText": {
+              "selector": "h2",
+              "pattern": "Comments",
+              "flags": "i"
+            }
+          },
+          { "closest": ".mt-6" }
+        ]
+      },
+      { "first": true },
+      { "htmlToMarkdown": true }
+    ],
+    "comments": {
+      "from": [
+        { "select": "main" },
+        {
+          "selectByText": {
+            "selector": "h2",
+            "pattern": "Comments",
+            "flags": "i"
+          }
+        },
+        { "closest": ".mt-6" },
+        { "childContaining": "div.py-2" }
+      ],
+      "mapTree": {
+        "node": "div.py-2",
+        "fields": {
+          "author": [
+            {
+              "fallback": [
+                [{ "select": "a[href^=\"/u/\"]" }, { "text": true }],
+                [{ "select": "a[class*=\"font-medium\"]" }, { "text": true }],
+                [{ "const": "unknown" }]
+              ]
+            }
+          ],
+          "body": [
+            {
+              "fallback": [
+                [{ "select": ".prose" }, { "htmlToMarkdown": true }],
+                [{ "selectAll": "p" }, { "textsJoin": "\n" }]
+              ]
+            }
+          ]
+        },
+        "template": "- **{{author}}**\n{{indent body}}",
+        "children": { "fromItemChildren": true }
+      }
+    }
+  },
+  "output": {
+    "join": [
+      "\n\n",
+      [
+        { "template": "# {{title}}" },
+        {
+          "join": [
+            "  \n",
+            [
+              { "template": "Author: {{author}}", "if": "author" },
+              { "template": "Community: {{submolt}}", "if": "submolt" },
+              { "template": "URL: {{$url}}" }
+            ]
+          ]
+        },
+        { "var": "body" },
+        {
+          "if": "comments",
+          "join": [
+            "\n\n",
+            [
+              { "template": "## Comments" },
+              { "var": "comments" }
+            ]
+          ]
+        }
+      ]
+    ]
+  }
+}

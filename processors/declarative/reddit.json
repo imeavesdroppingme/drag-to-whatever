@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "id": "reddit-markdown",
+  "name": "Reddit → Markdown",
+  "matches": [
+    "https://www.reddit.com/r/*/comments/*",
+    "https://reddit.com/r/*/comments/*",
+    "https://old.reddit.com/r/*/comments/*",
+    "http://www.reddit.com/r/*/comments/*",
+    "http://reddit.com/r/*/comments/*"
+  ],
+  "priority": 100,
+  "mimeType": "text/markdown",
+  "wait": {
+    "selector": "shreddit-comment, shreddit-post, h1",
+    "timeoutMs": 12000
+  },
+  "before": [
+    {
+      "scrollIntoView": "shreddit-comment-tree, #comment-tree, shreddit-comments-page",
+      "delayMs": 400,
+      "thenWait": "shreddit-comment",
+      "timeoutMs": 8000
+    }
+  ],
+
+  "vars": {
+    "title": [
+      {
+        "fallback": [
+          [{ "select": "h1" }, { "text": true }],
+          [{ "select": "shreddit-post" }, { "attr": "post-title" }],
+          [{ "const": "$title" }]
+        ]
+      }
+    ],
+    "author": [
+      {
+        "fallback": [
+          [{ "select": "shreddit-post" }, { "attr": "author" }],
+          [
+            { "select": "shreddit-post a[href*=\"/user/\"]" },
+            { "text": true }
+          ]
+        ]
+      }
+    ],
+    "subreddit": [
+      {
+        "fallback": [
+          [{ "select": "shreddit-post" }, { "attr": "subreddit-name" }],
+          [
+            { "const": "$url" },
+            { "match": "/r/([^/]+)", "group": 1 }
+          ]
+        ]
+      }
+    ],
+    "body": [
+      {
+        "fallback": [
+          [
+            { "select": "shreddit-post-text-body" },
+            { "htmlToMarkdown": true }
+          ],
+          [
+            { "select": "shreddit-post [slot=\"text-body\"]" },
+            { "htmlToMarkdown": true }
+          ],
+          [
+            { "select": "div[data-post-click-location=\"text-body\"]" },
+            { "htmlToMarkdown": true }
+          ]
+        ]
+      }
+    ],
+    "comments": {
+      "from": [
+        {
+          "fallback": [
+            [{ "select": "shreddit-comment-tree" }],
+            [{ "select": "#comment-tree" }],
+            [{ "select": "body" }]
+          ]
+        }
+      ],
+      "mapAll": {
+        "items": "shreddit-comment",
+        "fields": {
+          "author": [
+            {
+              "fallback": [
+                [{ "attr": "author" }],
+                [{ "select": "a[href*=\"/user/\"]" }, { "text": true }],
+                [{ "const": "unknown" }]
+              ]
+            }
+          ],
+          "depth": [
+            {
+              "fallback": [[{ "attr": "depth" }], [{ "const": "0" }]]
+            }
+          ],
+          "score": [{ "attr": "score" }],
+          "body": [
+            {
+              "fallback": [
+                [
+                  { "select": "[slot=\"comment\"]" },
+                  { "htmlToMarkdown": true }
+                ],
+                [
+                  { "select": "[id*=\"-post-rtjson-content\"]" },
+                  { "htmlToMarkdown": true }
+                ],
+                [{ "select": ".md" }, { "htmlToMarkdown": true }]
+              ]
+            }
+          ]
+        },
+        "template": "- **{{author}}**\n{{indentBy depth body}}"
+      }
+    }
+  },
+  "output": {
+    "join": [
+      "\n\n",
+      [
+        { "template": "# {{title}}" },
+        {
+          "join": [
+            "  \n",
+            [
+              { "template": "Subreddit: r/{{subreddit}}", "if": "subreddit" },
+              { "template": "Author: u/{{author}}", "if": "author" },
+              { "template": "URL: {{$url}}" }
+            ]
+          ]
+        },
+        { "var": "body" },
+        {
+          "if": "comments",
+          "join": [
+            "\n\n",
+            [{ "template": "## Comments" }, { "var": "comments" }]
+          ]
+        }
+      ]
+    ]
+  }
+}

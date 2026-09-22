@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "id": "facebook-markdown",
+  "name": "Facebook Post → Markdown",
+  "matches": [
+    "https://www.facebook.com/*/videos/*",
+    "https://facebook.com/*/videos/*",
+    "https://www.facebook.com/reel/*",
+    "https://facebook.com/reel/*",
+    "https://www.facebook.com/watch*",
+    "https://facebook.com/watch*",
+    "https://www.facebook.com/groups/*/permalink/*",
+    "https://facebook.com/groups/*/permalink/*",
+    "https://www.facebook.com/groups/*/posts/*",
+    "https://facebook.com/groups/*/posts/*",
+    "https://www.facebook.com/*/posts/*",
+    "https://facebook.com/*/posts/*",
+    "https://www.facebook.com/permalink.php*",
+    "https://facebook.com/permalink.php*",
+    "https://www.facebook.com/story.php*",
+    "https://facebook.com/story.php*",
+    "https://fb.watch/*",
+    "http://www.facebook.com/*/videos/*",
+    "http://facebook.com/*/videos/*",
+    "http://www.facebook.com/groups/*/permalink/*",
+    "http://www.facebook.com/*/posts/*",
+    "http://fb.watch/*"
+  ],
+  "priority": 100,
+  "mimeType": "text/markdown",
+  "wait": {
+    "selector": "[role=\"article\"], meta[property=\"og:url\"], h1, h3",
+    "timeoutMs": 10000
+  },
+  "before": [
+    {
+      "clickText": "^See more$|^See More$|^Altro$",
+      "max": 8,
+      "delayMs": 350
+    },
+    {
+      "clickText": "View\\s+\\d*\\s*more comments|View more comments|See more comments|View previous comments",
+      "max": 25,
+      "delayMs": 500
+    },
+    {
+      "clickText": "replied ·|\\d+\\s+replies?|View.*replies|ha risposto|\\d+\\s+rispost",
+      "max": 40,
+      "delayMs": 450
+    }
+  ],
+  "vars": {
+    "author": [
+      {
+        "fallback": [
+          [
+            {
+              "select": "[role=\"article\"]:not([aria-label^=\"Comment by\"]):not([aria-label^=\"Reply by\"]) h2 a, [role=\"article\"]:not([aria-label^=\"Comment by\"]):not([aria-label^=\"Reply by\"]) strong a"
+            },
+            { "text": true }
+          ],
+          [{ "select": "h2" }, { "text": true }],
+          [
+            { "const": "$title" },
+            { "match": "\\|\\s*([^|]+)\\s*\\|\\s*Facebook\\s*$", "group": 1 }
+          ]
+        ]
+      }
+    ],
+    "group": [
+      {
+        "fallback": [
+          [
+            { "select": "a[href*=\"/groups/\"]" },
+            { "text": true }
+          ],
+          [
+            { "const": "$title" },
+            { "match": "^([^|]+)", "group": 1 }
+          ]
+        ]
+      }
+    ],
+    "caption": [
+      {
+        "fallback": [
+          [
+            {
+              "select": "[role=\"article\"]:not([aria-label^=\"Comment by\"]):not([aria-label^=\"Reply by\"]) div[dir=\"auto\"]"
+            },
+            { "text": true }
+          ],
+          [
+            {
+              "select": "[data-ad-preview=\"message\"], [data-ad-comet-preview=\"message\"]"
+            },
+            { "text": true }
+          ],
+          [
+            { "select": "meta[property=\"og:description\"]" },
+            { "attr": "content" }
+          ],
+          [{ "select": "h3" }, { "text": true }],
+          [
+            { "select": "meta[name=\"description\"]" },
+            { "attr": "content" }
+          ]
+        ]
+      }
+    ],
+    "canonicalUrl": [
+      {
+        "fallback": [
+          [
+            { "select": "meta[property=\"og:url\"]" },
+            { "attr": "content" }
+          ],
+          [{ "const": "$url" }]
+        ]
+      }
+    ],
+    "stats": [
+      {
+        "fallback": [
+          [
+            {
+              "select": "[role=\"article\"]:not([aria-label^=\"Comment by\"]):not([aria-label^=\"Reply by\"]) [aria-label*=\"Like\"], [role=\"article\"]:not([aria-label^=\"Comment by\"]):not([aria-label^=\"Reply by\"]) [aria-label*=\"comment\"]"
+            },
+            { "attr": "aria-label" }
+          ]
+        ]
+      }
+    ],
+    "comments": {
+      "from": [{ "select": "body" }],
+      "mapAll": {
+        "items": "[role=\"article\"][aria-label^=\"Comment by\"], [role=\"article\"][aria-label^=\"Reply by\"]",
+        "fields": {
+          "author": [
+            {
+              "fallback": [
+                [
+                  { "attr": "aria-label" },
+                  { "match": "^(?:Comment|Reply) by\\s+(.+?)\\s+(?:to |a |\\d)", "group": 1 }
+                ],
+                [
+                  { "select": "a[role=\"link\"]" },
+                  { "text": true }
+                ],
+                [{ "const": "unknown" }]
+              ]
+            }
+          ],
+          "depth": [
+            {
+              "fallback": [
+                [
+                  { "attr": "aria-label" },
+                  { "match": "'s reply" },
+                  { "const": "2" }
+                ],
+                [
+                  { "attr": "aria-label" },
+                  { "match": "^Reply by" },
+                  { "const": "1" }
+                ],
+                [{ "const": "0" }]
+              ]
+            }
+          ],
+          "body": [
+            {
+              "fallback": [
+                [{ "select": "div[dir=\"auto\"]" }, { "text": true }],
+                [{ "text": true }]
+              ]
+            }
+          ]
+        },
+        "template": "- **{{author}}**\n{{indentBy depth body}}"
+      }
+    }
+  },
+  "output": {
+    "join": [
+      "\n\n",
+      [
+        { "template": "# Facebook post" },
+        {
+          "join": [
+            "  \n",
+            [
+              { "template": "Group: {{group}}", "if": "group" },
+              { "template": "Author: {{author}}", "if": "author" },
+              { "template": "Stats: {{stats}}", "if": "stats" },
+              { "template": "URL: {{canonicalUrl}}" }
+            ]
+          ]
+        },
+        {
+          "if": "caption",
+          "join": [
+            "\n\n",
+            [{ "template": "## Post" }, { "var": "caption" }]
+          ]
+        },
+        {
+          "if": "comments",
+          "join": [
+            "\n\n",
+            [{ "template": "## Comments" }, { "var": "comments" }]
+          ]
+        }
+      ]
+    ]
+  }
+}

@@ -61,4 +61,25 @@ Page content stays local. No analytics, telemetry, or backend.
 
 ## Custom processors
 
-See [skills/dragto-processor.md](skills/dragto-processor.md). Register new processors in `src/processors/index.ts` and rebuild. A `src/processors/user/` slot is reserved for build-time user processors.
+Both paths are supported. Prefer JSON for new sites.
+
+| Path | Skill | How |
+|------|-------|-----|
+| **Declarative JSON** (preferred) | [skills/dragto-processor-json.md](skills/dragto-processor-json.md) | Write a `.json` file → overlay **Load JSON**. Stored in `chrome.storage.local`, re-registered on session start. |
+| **TypeScript** | [skills/dragto-processor-ts.md](skills/dragto-processor-ts.md) | Implement `Processor` under `src/processors/`, register in `src/processors/index.ts`, then `npm run build` and reload the extension. |
+
+Index: [skills/dragto-processor.md](skills/dragto-processor.md).
+
+Example JSON processors in the repo ([`processors/declarative/`](processors/declarative/)):
+
+| File | Site |
+|------|------|
+| [moltbook.json](processors/declarative/moltbook.json) | Moltbook posts |
+| [jira.json](processors/declarative/jira.json) | Jira issues |
+| [reddit.json](processors/declarative/reddit.json) | Reddit threads |
+| [youtube.json](processors/declarative/youtube.json) | YouTube videos |
+| [facebook.json](processors/declarative/facebook.json) | Facebook posts / groups |
+
+## Support
+
+If you like this extension, leave a short message at [imeavesdropping.com](https://imeavesdropping.com).

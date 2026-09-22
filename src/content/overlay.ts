@@ -45,8 +45,10 @@ export type OverlayController = {
   getSelectedProcessorId: () => string;
   setSelectedProcessorId: (id: string) => void;
   onProcessorChange: (cb: (id: string, manual: boolean) => void) => void;
+  onLoadJson: (cb: (raw: unknown) => Promise<{ ok: true } | { ok: false; error: string }>) => void;
   getCachedArtifact: () => Artifact | null;
   refreshProcessorOptions: (url: string) => void;
+  showMessage: (message: string, kind?: "error" | "info") => void;
 };
 
 export function mountOverlay(host: HTMLElement): OverlayController {
@@ -75,6 +77,8 @@ export function mountOverlay(host: HTMLElement): OverlayController {
           <span data-role="copy-label">Copy</span>
         </button>
       </div>
+      <button type="button" class="dtw-load" data-role="load">Load JSON</button>
+      <input type="file" accept="application/json,.json" data-role="file" hidden />
     </div>
   `;
 
@@ -87,11 +91,16 @@ export function mountOverlay(host: HTMLElement): OverlayController {
   const dragLabel = root.querySelector<HTMLElement>("[data-role='drag-label']")!;
   const copyBtn = root.querySelector<HTMLButtonElement>("[data-role='copy']")!;
   const copyLabel = root.querySelector<HTMLElement>("[data-role='copy-label']")!;
+  const loadBtn = root.querySelector<HTMLButtonElement>("[data-role='load']")!;
+  const fileInput = root.querySelector<HTMLInputElement>("[data-role='file']")!;
   const moveEl = root.querySelector<HTMLElement>("[data-role='move']")!;
 
   let selectedId = "";
   let cached: Artifact | null = null;
   let changeHandler: ((id: string, manual: boolean) => void) | null = null;
+  let loadHandler:
+    | ((raw: unknown) => Promise<{ ok: true } | { ok: false; error: string }>)
+    | null = null;
   let destroyed = false;
   let copyResetTimer = 0;
 
@@ -207,6 +216,37 @@ export function mountOverlay(host: HTMLElement): OverlayController {
     void copyCached();
   });
 
+  loadBtn.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files?.[0];
+    fileInput.value = "";
+    if (!file || !loadHandler) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      void (async () => {
+        try {
+          const text = String(reader.result ?? "");
+          const raw = JSON.parse(text) as unknown;
+          const result = await loadHandler!(raw);
+          if (!result.ok) {
+            errorEl.hidden = false;
+            errorEl.textContent = result.error;
+            return;
+          }
+          errorEl.hidden = true;
+          errorEl.textContent = "";
+        } catch {
+          errorEl.hidden = false;
+          errorEl.textContent = "Invalid JSON file";
+        }
+      })();
+    };
+    reader.readAsText(file);
+  });
+
   dragEl.addEventListener("dragstart", (event) => {
     if (!cached?.content) {
       event.preventDefault();
@@ -282,9 +322,22 @@ export function mountOverlay(host: HTMLElement): OverlayController {
     onProcessorChange(cb) {
       changeHandler = cb;
     },
+    onLoadJson(cb) {
+      loadHandler = cb;
+    },
     getCachedArtifact: () => cached,
     refreshProcessorOptions(url) {
       fillOptions(url, selectedId);
+    },
+    showMessage(message, kind = "error") {
+      if (kind === "info") {
+        statusEl.hidden = false;
+        statusEl.dataset.kind = "preparing";
+        statusEl.textContent = message;
+        return;
+      }
+      errorEl.hidden = false;
+      errorEl.textContent = message;
     },
   };
 }

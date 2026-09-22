@@ -1,5 +1,9 @@
 import { OVERLAY_HOST_ID, MSG, type ExtensionMessage } from "../shared/messaging";
 import { registerBuiltInProcessors } from "../processors";
+import {
+  installDeclarativeProcessor,
+  registerStoredDeclarativeProcessors,
+} from "../core/declarative";
 import { autoSelectProcessor, getProcessor } from "../core/registry";
 import { normalizePageUrl } from "../core/match";
 import { createPrepareController } from "../core/prepare";
@@ -25,6 +29,7 @@ if (window.__dragtowhatever) {
 
 function createRuntime(): Runtime {
   registerBuiltInProcessors();
+  void registerStoredDeclarativeProcessors();
 
   let overlay: OverlayController | null = null;
   let host: HTMLElement | null = null;
@@ -35,6 +40,7 @@ function createRuntime(): Runtime {
   let manualOverrideId: string | null = null;
   let urlWatchCleanup: (() => void) | null = null;
   let active = false;
+  let bootPromise: Promise<void> | null = null;
 
   function ensureOverlay(): OverlayController {
     if (overlay && host?.isConnected) return overlay;
@@ -54,6 +60,14 @@ function createRuntime(): Runtime {
         manualOverrideId = id;
       }
       void prepare.prepare(id);
+    });
+
+    overlay.onLoadJson(async (raw) => {
+      const result = await installDeclarativeProcessor(raw);
+      if (!result.ok) return result;
+      manualOverrideId = result.def.id;
+      refreshForCurrentPage();
+      return { ok: true };
     });
 
     return overlay;
@@ -133,8 +147,12 @@ function createRuntime(): Runtime {
     if (active && host?.isConnected) return;
     active = true;
     pageKey = normalizePageUrl(location.href);
-    refreshForCurrentPage();
-    startUrlWatch();
+    bootPromise = registerStoredDeclarativeProcessors().then(() => {
+      if (!active) return;
+      refreshForCurrentPage();
+      startUrlWatch();
+    });
+    void bootPromise;
   }
 
   chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
