@@ -27,21 +27,8 @@ async function updateActionUi(active: boolean): Promise<void> {
 }
 
 async function registerContentScript(): Promise<void> {
-  const existing = await chrome.scripting.getRegisteredContentScripts({
-    ids: [CONTENT_SCRIPT_ID],
-  });
-  if (existing.length > 0) {
-    await chrome.scripting.updateContentScripts([
-      {
-        id: CONTENT_SCRIPT_ID,
-        matches: [...CONTENT_MATCHES],
-        js: ["content.js"],
-        runAt: "document_idle",
-        persistAcrossSessions: false,
-      },
-    ]);
-    return;
-  }
+  // Idempotent: SW restarts / double-clicks can leave the ID registered.
+  await unregisterContentScript();
   await chrome.scripting.registerContentScripts([
     {
       id: CONTENT_SCRIPT_ID,
