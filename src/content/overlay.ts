@@ -6,6 +6,7 @@ import {
   matchingProcessors,
 } from "../core/registry";
 import { normalizePageUrl } from "../core/match";
+import { MSG } from "../shared/messaging";
 import overlayCss from "./overlay.css?inline";
 
 const LOGO_SVG = `<svg class="dtw-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -63,6 +64,7 @@ export function mountOverlay(host: HTMLElement): OverlayController {
       ${LOGO_SVG}
       <span class="dtw-brand">DragToWhatever</span>
       <span class="dtw-status" data-role="status" hidden></span>
+      <button type="button" class="dtw-close" data-role="close" aria-label="Close DragToWhatever" title="Close">×</button>
     </div>
     <div class="dtw-body">
       <select class="dtw-select" data-role="processor" aria-label="Processor"></select>
@@ -94,6 +96,7 @@ export function mountOverlay(host: HTMLElement): OverlayController {
   const loadBtn = root.querySelector<HTMLButtonElement>("[data-role='load']")!;
   const fileInput = root.querySelector<HTMLInputElement>("[data-role='file']")!;
   const moveEl = root.querySelector<HTMLElement>("[data-role='move']")!;
+  const closeBtn = root.querySelector<HTMLButtonElement>("[data-role='close']")!;
 
   let selectedId = "";
   let cached: Artifact | null = null;
@@ -214,6 +217,14 @@ export function mountOverlay(host: HTMLElement): OverlayController {
 
   copyBtn.addEventListener("click", () => {
     void copyCached();
+  });
+
+  closeBtn.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
+  closeBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    void chrome.runtime.sendMessage({ type: MSG.REQUEST_OFF });
   });
 
   loadBtn.addEventListener("click", () => {

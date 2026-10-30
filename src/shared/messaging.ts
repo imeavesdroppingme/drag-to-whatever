@@ -6,6 +6,7 @@ export const MSG = {
   TEARDOWN: "dragtowhatever:teardown",
   SESSION_STATE: "dragtowhatever:session-state",
   PING: "dragtowhatever:ping",
+  REQUEST_OFF: "dragtowhatever:request-off",
 } as const;
 
 export type TeardownMessage = { type: typeof MSG.TEARDOWN };
@@ -14,8 +15,10 @@ export type SessionStateMessage = {
   active: boolean;
 };
 export type PingMessage = { type: typeof MSG.PING };
+export type RequestOffMessage = { type: typeof MSG.REQUEST_OFF };
 
 export type ExtensionMessage =
   | TeardownMessage
   | SessionStateMessage
-  | PingMessage;
+  | PingMessage
+  | RequestOffMessage;

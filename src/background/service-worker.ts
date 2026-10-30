@@ -135,5 +135,9 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
     });
     return true;
   }
+  if (message?.type === MSG.REQUEST_OFF) {
+    void turnOff().then(() => sendResponse({ ok: true }));
+    return true;
+  }
   return false;
 });

@@ -4,3 +4,5 @@ dist/
 .DS_Store
 misc/
 *.zip
+pnpm-lock.yaml
+pnpm-workspace.yaml
